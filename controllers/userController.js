@@ -5,7 +5,7 @@ exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.findAll({
             where: { role: 'pemohon' },
-            attributes: ['id', 'name', 'email', 'institution', 'created_at'],
+            attributes: ['id', 'kabupaten_kota', 'username', 'created_at'],
             order: [['created_at', 'DESC']]
         });
 
@@ -25,31 +25,30 @@ exports.getAllUsers = async (req, res) => {
 // Create new user
 exports.createUser = async (req, res) => {
     try {
-        const { name, email, password, institution } = req.body;
+        const { kabupaten_kota, username, password } = req.body;
 
         // Validation
-        if (!name || !email || !password || !institution) {
+        if (!kabupaten_kota || !username || !password) {
             return res.status(400).json({
                 success: false,
                 message: 'Semua field wajib diisi'
             });
         }
 
-        // Check if email already exists
-        const existingUser = await User.findOne({ where: { email } });
+        // Check if username already exists
+        const existingUser = await User.findOne({ where: { username } });
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: 'Email sudah terdaftar'
+                message: 'Username sudah terdaftar'
             });
         }
 
         // Create user (password will be automatically hashed by beforeCreate hook)
         const newUser = await User.create({
-            name,
-            email,
+            kabupaten_kota,
+            username,
             password,
-            institution,
             role: 'pemohon'
         });
 
@@ -58,9 +57,8 @@ exports.createUser = async (req, res) => {
             message: 'Akun berhasil dibuat',
             data: {
                 id: newUser.id,
-                name: newUser.name,
-                email: newUser.email,
-                institution: newUser.institution
+                kabupaten_kota: newUser.kabupaten_kota,
+                username: newUser.username
             }
         });
     } catch (error) {
@@ -76,7 +74,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, password, institution } = req.body;
+        const { kabupaten_kota, username, password } = req.body;
 
         // Find user
         const user = await User.findByPk(id);
@@ -87,28 +85,27 @@ exports.updateUser = async (req, res) => {
             });
         }
 
-        // Check if email is already used by another user
-        if (email && email !== user.email) {
-            const emailExists = await User.findOne({
+        // Check if username is already used by another user
+        if (username && username !== user.username) {
+            const usernameExists = await User.findOne({
                 where: {
-                    email,
+                    username,
                     id: { [require('sequelize').Op.ne]: id }
                 }
             });
 
-            if (emailExists) {
+            if (usernameExists) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Email sudah digunakan oleh pengguna lain'
+                    message: 'Username sudah digunakan oleh pengguna lain'
                 });
             }
         }
 
         // Prepare update data
         const updateData = {
-            name,
-            email,
-            institution
+            kabupaten_kota,
+            username
         };
 
         // Only include password if it's provided and not empty

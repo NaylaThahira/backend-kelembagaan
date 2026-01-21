@@ -10,23 +10,18 @@ const User = sequelize.define(
             primaryKey: true,
             autoIncrement: true,
         },
-        name: {
+        kabupaten_kota: {
             type: DataTypes.STRING(255),
             allowNull: false,
+            comment: 'Nama Kabupaten/Kota',
         },
-        email: {
-            type: DataTypes.STRING(255),
+        username: {
+            type: DataTypes.STRING(100),
             allowNull: false,
             unique: true,
-            validate: {
-                isEmail: true,
-            },
+            comment: 'Username untuk login',
         },
         password: {
-            type: DataTypes.STRING(255),
-            allowNull: false,
-        },
-        institution: {
             type: DataTypes.STRING(255),
             allowNull: false,
         },
@@ -75,3 +70,4 @@ User.prototype.comparePassword = async function (candidatePassword) {
 };
 
 module.exports = User;
+
