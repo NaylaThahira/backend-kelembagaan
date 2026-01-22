@@ -19,10 +19,12 @@ app.use("/uploads", express.static("uploads"));
 const userRoutes = require("./routes/users");
 const pengajuanRoutes = require("./routes/pengajuan");
 const uploadRoutes = require("./routes/upload");
+const modulLayananRoutes = require("./routes/modulLayanan");
 
 app.use("/api/users", userRoutes);
 app.use("/api/pengajuan", pengajuanRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/modul-layanan", modulLayananRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");
@@ -41,13 +43,9 @@ sequelize
   })
   .then(() => {
     console.log("✅ Database & tables have been synced.");
-    console.log("📋 Tables created/updated:");
-    console.log("   - users");
-    console.log("   - modul_layanan");
-    console.log("   - persyaratan_dokumen");
-    console.log("   - pengajuan");
-    console.log("   - dokumen");
+   
   })
+  
   .catch((err) => {
     console.error("❌ Unable to connect to the database:", err);
   });
