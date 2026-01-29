@@ -1,7 +1,6 @@
 const { PersyaratanDokumen } = require("../models/relation");
 
 const persyaratanDokumenData = [
-    // Persyaratan untuk Modul 1: Evaluasi Kelembagaan Perangkat Daerah
     {
         id_modul: 1,
         nama_dokumen: "Surat Pengantar dari Bupati/Walikota/Sekretaris Daerah",
@@ -26,8 +25,6 @@ const persyaratanDokumenData = [
         format_file: "PDF, XLSX",
         wajib: false,
     },
-
-    // Persyaratan untuk Modul 2: Fasilitas Ranperda/Ranperkada
     {
         id_modul: 2,
         nama_dokumen: "Surat Pengantar dari Bupati/Walikota/Sekretaris Daerah",
@@ -52,8 +49,6 @@ const persyaratanDokumenData = [
         format_file: "PDF, DOCX",
         wajib: false,
     },
-
-    // Persyaratan untuk Modul 3: Pembentukan UPTD
     {
         id_modul: 3,
         nama_dokumen: "Surat Pengantar dari Bupati/Walikota/Sekretaris Daerah",
@@ -82,17 +77,14 @@ const persyaratanDokumenData = [
 
 async function seedPersyaratanDokumen() {
     try {
-        // Hapus data lama
         await PersyaratanDokumen.destroy({ where: {} });
-
-        // Insert data persyaratan dokumen
         for (const persyaratan of persyaratanDokumenData) {
             await PersyaratanDokumen.create(persyaratan);
         }
 
-        console.log("✅ Berhasil seed 12 persyaratan dokumen");
+        console.log("Berhasil seed 12 persyaratan dokumen");
     } catch (error) {
-        console.error("❌ Error seeding persyaratan dokumen:", error);
+        console.error("Error seeding persyaratan dokumen:", error);
         throw error;
     }
 }

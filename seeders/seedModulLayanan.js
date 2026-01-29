@@ -20,17 +20,14 @@ const modulLayananData = [
 
 async function seedModulLayanan() {
     try {
-        // Hapus data lama
         await ModulLayanan.destroy({ where: {} });
-
-        // Insert data modul layanan
         for (const modul of modulLayananData) {
             await ModulLayanan.create(modul);
         }
 
-        console.log("✅ Berhasil seed 3 modul layanan");
+        console.log("Berhasil seed 3 modul layanan");
     } catch (error) {
-        console.error("❌ Error seeding modul layanan:", error);
+        console.error("Error seeding modul layanan:", error);
         throw error;
     }
 }

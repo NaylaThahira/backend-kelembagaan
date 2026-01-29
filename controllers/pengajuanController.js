@@ -204,9 +204,11 @@ const createPengajuan = async (req, res) => {
                 id_user: id_user,
                 id_modul: id_modul,
                 tanggal_pengajuan: new Date(),
-                status_pengajuan: "Diajukan",
+                status_pengajuan: "Menunggu Verifikasi",  // Status awal: langsung ke verifikasi
                 progress_persen: 0,
                 catatan_pemohon: catatan_pemohon || null,
+                tahapan_proses: null,
+                catatan_revisi: null,
                 created_at: new Date(),
                 updated_at: new Date(),
             },
@@ -306,7 +308,9 @@ const getPengajuanByUser = async (req, res) => {
             tanggal: item.tanggal_pengajuan,
             // Logika status: Jika "Diajukan" di DB, tampilkan "Menunggu Verifikasi"
             status: item.status_pengajuan === "Diajukan" ? "Menunggu Verifikasi" : item.status_pengajuan,
-            progress: item.progress_persen
+            progress: item.progress_persen,
+            tahapan_proses: item.tahapan_proses,
+            catatan_revisi: item.catatan_revisi
         }));
 
         res.status(200).json({
@@ -321,9 +325,323 @@ const getPengajuanByUser = async (req, res) => {
         });
     }
 };
+
+// GET - Semua pengajuan untuk admin
+const getAllPengajuan = async (req, res) => {
+    try {
+        const User = require("../models/User");
+
+        const pengajuan = await Pengajuan.findAll({
+            include: [
+                {
+                    model: ModulLayanan,
+                    as: "modul",
+                    attributes: ["nama_modul"]
+                },
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["kabupaten_kota"]
+                }
+            ],
+            order: [["created_at", "DESC"]]
+        });
+
+        // Helper function untuk convert Windows path ke URL path
+        const convertToUrlPath = (filePath) => {
+            if (!filePath) return null;
+            // Jika sudah ada prefix /, return as is
+            if (filePath.startsWith('/')) return filePath;
+            // Convert backslash ke forward slash dan tambah prefix /
+            return '/' + filePath.replace(/\\/g, '/');
+        };
+
+        // Transformasi data untuk frontend
+        const dataFormatted = pengajuan.map((item, index) => ({
+            no: index + 1,
+            id_pengajuan: item.id_pengajuan,
+            nomor_registrasi: item.nomor_registrasi,
+            pemohon: item.user ? item.user.kabupaten_kota : "Tidak diketahui",
+            nama_layanan: item.modul ? item.modul.nama_modul : "Tidak diketahui",
+            tanggal: item.tanggal_pengajuan,
+            status: item.status_pengajuan,
+            progress: item.progress_persen,
+            tahapan_proses: item.tahapan_proses,
+            catatan_revisi: item.catatan_revisi,
+            catatan_pemohon: item.catatan_pemohon,
+            file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),  // Convert path!
+            tanggal_selesai: item.tanggal_selesai
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: dataFormatted
+        });
+    } catch (error) {
+        console.error("Error fetching all pengajuan:", error);
+        res.status(500).json({
+            success: false,
+            message: "Gagal mengambil data pengajuan",
+            error: error.message
+        });
+    }
+};
+
+// GET - Pengajuan berdasarkan status untuk admin
+const getPengajuanByStatus = async (req, res) => {
+    try {
+        const { status } = req.params;
+        const User = require("../models/User");
+
+        const pengajuan = await Pengajuan.findAll({
+            where: { status_pengajuan: status },
+            include: [
+                {
+                    model: ModulLayanan,
+                    as: "modul",
+                    attributes: ["nama_modul"]
+                },
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["kabupaten_kota"]
+                }
+            ],
+            order: [["created_at", "DESC"]]
+        });
+
+        // Helper function untuk convert Windows path ke URL path
+        const convertToUrlPath = (filePath) => {
+            if (!filePath) return null;
+            // Jika sudah ada prefix /, return as is
+            if (filePath.startsWith('/')) return filePath;
+            // Convert backslash ke forward slash dan tambah prefix /
+            return '/' + filePath.replace(/\\/g, '/');
+        };
+
+        const dataFormatted = pengajuan.map((item, index) => ({
+            no: index + 1,
+            id_pengajuan: item.id_pengajuan,
+            nomor_registrasi: item.nomor_registrasi,
+            pemohon: item.user ? item.user.kabupaten_kota : "Tidak diketahui",
+            nama_layanan: item.modul ? item.modul.nama_modul : "Tidak diketahui",
+            tanggal: item.tanggal_pengajuan,
+            status: item.status_pengajuan,
+            progress: item.progress_persen,
+            tahapan_proses: item.tahapan_proses,
+            catatan_revisi: item.catatan_revisi,
+            catatan_pemohon: item.catatan_pemohon,
+            file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),  // Convert path!
+            tanggal_selesai: item.tanggal_selesai
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: dataFormatted
+        });
+    } catch (error) {
+        console.error("Error fetching pengajuan by status:", error);
+        res.status(500).json({
+            success: false,
+            message: "Gagal mengambil data pengajuan",
+            error: error.message
+        });
+    }
+};
+
+// PUT - Update status pengajuan (untuk admin)
+const updatePengajuanStatus = async (req, res) => {
+    try {
+        const { id_pengajuan } = req.params;
+        const {
+            status_pengajuan,
+            tahapan_proses,
+            catatan_revisi,
+            progress_persen,
+            created_by  // Username admin
+        } = req.body;
+
+        const { Pengajuan, CatatanRevisi } = require("../models/relation");
+        const pengajuan = await Pengajuan.findByPk(id_pengajuan);
+
+        if (!pengajuan) {
+            return res.status(404).json({
+                success: false,
+                message: "Pengajuan tidak ditemukan"
+            });
+        }
+
+        // Update status pengajuan
+        await pengajuan.update({
+            status_pengajuan: status_pengajuan || pengajuan.status_pengajuan,
+            tahapan_proses: tahapan_proses !== undefined ? tahapan_proses : pengajuan.tahapan_proses,
+            progress_persen: progress_persen !== undefined ? progress_persen : pengajuan.progress_persen,
+            updated_at: new Date()
+        });
+
+        // Jika ada catatan revisi, simpan ke tabel catatan_revisi
+        if (catatan_revisi && status_pengajuan === 'Perlu Perbaikan') {
+            await CatatanRevisi.create({
+                id_pengajuan: id_pengajuan,
+                catatan: catatan_revisi,
+                created_by: created_by || 'admin',
+                created_at: new Date()
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Status pengajuan berhasil diupdate",
+            data: pengajuan
+        });
+    } catch (error) {
+        console.error("Error updating pengajuan:", error);
+        res.status(500).json({
+            success: false,
+            message: "Gagal mengupdate status pengajuan",
+            error: error.message
+        });
+    }
+};
+
+// GET - Dokumen by pengajuan ID
+const getDokumenByPengajuan = async (req, res) => {
+    try {
+        const { id_pengajuan } = req.params;
+        const { Dokumen, PersyaratanDokumen } = require("../models/relation");
+
+        const dokumen = await Dokumen.findAll({
+            where: { id_pengajuan: id_pengajuan },
+            include: [
+                {
+                    model: PersyaratanDokumen,
+                    as: "persyaratan",
+                    attributes: ["nama_dokumen", "format_file"]
+                }
+            ],
+            order: [["created_at", "ASC"]]
+        });
+
+        res.status(200).json({
+            success: true,
+            data: dokumen
+        });
+    } catch (error) {
+        console.error("Error fetching dokumen:", error);
+        res.status(500).json({
+            success: false,
+            message: "Gagal mengambil data dokumen",
+            error: error.message
+        });
+    }
+};
+
+// GET - Catatan Revisi by pengajuan ID
+const getCatatanRevisi = async (req, res) => {
+    try {
+        const { id_pengajuan } = req.params;
+        const { CatatanRevisi } = require("../models/relation");
+
+        const catatanList = await CatatanRevisi.findAll({
+            where: { id_pengajuan: id_pengajuan },
+            order: [["created_at", "DESC"]]  // Terbaru di atas
+        });
+
+        res.status(200).json({
+            success: true,
+            data: catatanList
+        });
+    } catch (error) {
+        console.error("Error fetching catatan revisi:", error);
+        res.status(500).json({
+            success: false,
+            message: "Gagal mengambil catatan revisi",
+            error: error.message
+        });
+    }
+};
+
+// POST - Selesaikan pengajuan dengan upload surat rekomendasi
+const selesaikanPengajuan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({
+                success: false,
+                message: "File surat rekomendasi wajib diupload"
+            });
+        }
+
+        // Validate file type
+        const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (!allowedTypes.includes(file.mimetype)) {
+            return res.status(400).json({
+                success: false,
+                message: "File harus berformat PDF atau Word (.doc, .docx)"
+            });
+        }
+
+        // Find pengajuan
+        const pengajuan = await Pengajuan.findByPk(id);
+        if (!pengajuan) {
+            return res.status(404).json({
+                success: false,
+                message: "Pengajuan tidak ditemukan"
+            });
+        }
+
+        // Validate status
+        if (pengajuan.status_pengajuan !== 'Dalam Proses') {
+            return res.status(400).json({
+                success: false,
+                message: "Hanya pengajuan dengan status 'Dalam Proses' yang bisa diselesaikan"
+            });
+        }
+
+        // Update pengajuan
+        // Convert Windows backslash to forward slash dan tambah prefix /
+        const filePath = '/' + file.path.replace(/\\/g, '/');
+
+        await pengajuan.update({
+            status_pengajuan: 'Selesai',
+            file_surat_rekomendasi: filePath,
+            tanggal_selesai: new Date(),
+            progress_persen: 100,
+            tahapan_proses: null,  // Clear tahapan karena sudah selesai
+            updated_at: new Date()
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Pengajuan berhasil diselesaikan",
+            data: {
+                id_pengajuan: pengajuan.id_pengajuan,
+                status_pengajuan: 'Selesai',
+                file_surat_rekomendasi: pengajuan.file_surat_rekomendasi,
+                tanggal_selesai: pengajuan.tanggal_selesai
+            }
+        });
+    } catch (error) {
+        console.error("Error selesaikan pengajuan:", error);
+        res.status(500).json({
+            success: false,
+            message: "Gagal menyelesaikan pengajuan",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getAllModulLayanan,
     getPersyaratanByModul,
     createPengajuan,
-    getPengajuanByUser
+    getPengajuanByUser,
+    getAllPengajuan,
+    getPengajuanByStatus,
+    updatePengajuanStatus,
+    getDokumenByPengajuan,
+    getCatatanRevisi,
+    selesaikanPengajuan
 };

@@ -1,17 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const { authenticate, isAdmin } = require('../middleware/auth');
 
+// Semua route user hanya bisa diakses oleh admin yang sudah login
 // GET all users
-router.get('/', userController.getAllUsers);
+router.get('/', authenticate, isAdmin, userController.getAllUsers);
 
 // POST create new user
-router.post('/', userController.createUser);
+router.post('/', authenticate, isAdmin, userController.createUser);
 
 // PUT update user
-router.put('/:id', userController.updateUser);
+router.put('/:id', authenticate, isAdmin, userController.updateUser);
 
 // DELETE user
-router.delete('/:id', userController.deleteUser);
+router.delete('/:id', authenticate, isAdmin, userController.deleteUser);
 
 module.exports = router;

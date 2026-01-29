@@ -98,6 +98,21 @@ const Pengajuan = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    tahapan_proses: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      comment: 'Tahapan proses pengajuan'
+    },
+    file_surat_rekomendasi: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Path file surat rekomendasi dari admin (output final)'
+    },
+    tanggal_selesai: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'Tanggal admin menyelesaikan pengajuan'
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -157,9 +172,48 @@ const Dokumen = sequelize.define(
   }
 );
 
-// ===========================
-// DEFINE RELATIONSHIPS
-// ===========================
+// 5. CatatanRevisi Model
+const CatatanRevisi = sequelize.define(
+  "CatatanRevisi",
+  {
+    id_catatan_revisi: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    id_pengajuan: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    catatan: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    created_by: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+  },
+  {
+    tableName: "catatan_revisi",
+    timestamps: false,
+  }
+);
+
+
+const User = require("./User");
+User.hasMany(Pengajuan, {
+  foreignKey: "id_user",
+  as: "pengajuan",
+});
+Pengajuan.belongsTo(User, {
+  foreignKey: "id_user",
+  as: "user",
+});
 
 // ModulLayanan -> Pengajuan (One to Many)
 ModulLayanan.hasMany(Pengajuan, {
@@ -201,13 +255,23 @@ Dokumen.belongsTo(PersyaratanDokumen, {
   as: "persyaratan",
 });
 
+Pengajuan.hasMany(CatatanRevisi, {
+  foreignKey: "id_pengajuan",
+  as: "revisi_list", 
+});
+CatatanRevisi.belongsTo(Pengajuan, {
+  foreignKey: "id_pengajuan",
+  as: "pengajuan",
+});
+
 // ===========================
 // EXPORT MODELS
 // ===========================
 module.exports = {
+  User,
   ModulLayanan,
   PersyaratanDokumen,
   Pengajuan,
   Dokumen,
+  CatatanRevisi,
 };
-

@@ -1,0 +1,209 @@
+const { User, Pengajuan } = require("../models/relation");
+const usersData = [
+    { kabupaten_kota: 'Kab. Padang Pariaman', username: 'padangpariaman', password: 'padangpariaman123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kota Bukittinggi', username: 'bukittinggi', password: 'bukittinggi123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kab. Agam', username: 'agam', password: 'agam123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kota Padang', username: 'padang', password: 'padang123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kab. Solok', username: 'solok', password: 'solok123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kab. Lima Puluh Kota', username: 'limapuluhkota', password: 'limapuluhkota123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kota Payakumbuh', username: 'payakumbuh', password: 'payakumbuh123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kab. Pasaman', username: 'pasaman', password: 'pasaman123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kab. Sijunjung', username: 'sijunjung', password: 'sijunjung123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kota Solok', username: 'kotasolok', password: 'kotasolok123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kab. Dharmasraya', username: 'dharmasraya', password: 'dharmasraya123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kab. Pasaman Barat', username: 'pasamanbarat', password: 'pasamanbarat123', role: 'kab/kota' },
+    { kabupaten_kota: 'Kab. Tanah Datar', username: 'tanahdatar', password: 'tanahdatar123', role: 'kab/kota' }
+];
+
+async function seedUsersAndPengajuan() {
+    try {
+        await Pengajuan.destroy({ where: {} });
+        const { Op } = require("sequelize");
+        await User.destroy({ where: { role: { [Op.ne]: 'admin' } } });
+        console.log('   📝 Seeding users kab/kota...');
+        const userIdMap = {}; 
+        for (const userData of usersData) {
+            const user = await User.create(userData);
+            userIdMap[userData.username] = user.id;
+        }
+        console.log(`   ✅ Berhasil seed ${usersData.length} users kab/kota`);
+        const pengajuanTemplates = [
+            {
+                username: 'kotasolok',
+                nomor_registrasi: 'PBU-202501-0001',
+                id_modul: 3,
+                tanggal_pengajuan: '2025-01-05',
+                status_pengajuan: 'Selesai',
+                progress_persen: 100,
+                catatan_pemohon: 'Permohonan pembentukan UPTD Pengelolaan Sampah',
+                tahapan_proses: null,
+                file_surat_rekomendasi: '/uploads/rekomendasi/dummy-rekomendasi-uptd-sampah.pdf',
+                tanggal_selesai: new Date('2025-01-20T10:30:00')
+            },
+            {
+                username: 'solok',
+                nomor_registrasi: 'PBU-202501-0002',
+                id_modul: 3,
+                tanggal_pengajuan: '2025-01-10',
+                status_pengajuan: 'Dalam Proses',
+                progress_persen: 85,
+                catatan_pemohon: 'Permohonan pembentukan UPTD Perpustakaan Daerah',
+                tahapan_proses: 'Proses Penandatanganan'
+            },
+            {
+                username: 'padangpariaman',
+                nomor_registrasi: 'EKL-202501-0001',
+                id_modul: 1,
+                tanggal_pengajuan: '2025-01-08',
+                status_pengajuan: 'Dalam Proses',
+                progress_persen: 90,
+                catatan_pemohon: 'Evaluasi kelembagaan perangkat daerah',
+                tahapan_proses: 'Proses Penandatanganan'
+            },
+            {
+                username: 'sijunjung',
+                nomor_registrasi: 'EKL-202501-0002',
+                id_modul: 1,
+                tanggal_pengajuan: '2025-01-06',
+                status_pengajuan: 'Dalam Proses',
+                progress_persen: 60,
+                catatan_pemohon: 'Evaluasi untuk restrukturisasi OPD',
+                tahapan_proses: 'Penyusunan Draft Rekomendasi/Hasil Fasilitasi'
+            },
+            {
+                username: 'tanahdatar',
+                nomor_registrasi: 'FRA-202501-0001',
+                id_modul: 2,
+                tanggal_pengajuan: '2025-01-09',
+                status_pengajuan: 'Dalam Proses',
+                progress_persen: 65,
+                catatan_pemohon: 'Fasilitasi Ranperda tentang APBD',
+                tahapan_proses: 'Penyusunan Draft Rekomendasi/Hasil Fasilitasi'
+            },
+            {
+                username: 'bukittinggi',
+                nomor_registrasi: 'FRA-202501-0002',
+                id_modul: 2,
+                tanggal_pengajuan: '2025-01-06',
+                status_pengajuan: 'Dalam Proses',
+                progress_persen: 45,
+                catatan_pemohon: 'Fasilitasi Ranperda tentang Retribusi Daerah',
+                tahapan_proses: 'Pelaksanaan Rapat Fasilitasi'
+            },
+            {
+                username: 'pasamanbarat',
+                nomor_registrasi: 'EKL-202501-0003',
+                id_modul: 1,
+                tanggal_pengajuan: '2025-01-08',
+                status_pengajuan: 'Dalam Proses',
+                progress_persen: 40,
+                catatan_pemohon: 'Evaluasi kelembagaan urusan kesehatan',
+                tahapan_proses: 'Pelaksanaan Rapat Fasilitasi'
+            },
+            {
+                username: 'padang',
+                nomor_registrasi: 'FRA-202501-0003',
+                id_modul: 2,
+                tanggal_pengajuan: '2025-01-09',
+                status_pengajuan: 'Dalam Proses',
+                progress_persen: 20,
+                catatan_pemohon: 'Fasilitasi Ranperda tentang Pajak Daerah',
+                tahapan_proses: 'Penjadwalan Rapat'
+            },
+            {
+                username: 'agam',
+                nomor_registrasi: 'EKL-202501-0004',
+                id_modul: 1,
+                tanggal_pengajuan: '2025-01-07',
+                status_pengajuan: 'Perlu Perbaikan',
+                progress_persen: 5,
+                catatan_pemohon: 'Evaluasi kelembagaan bidang pertanian',
+                tahapan_proses: null
+            },
+            {
+                username: 'padangpariaman',
+                nomor_registrasi: 'FRA-202501-0004',
+                id_modul: 2,
+                tanggal_pengajuan: '2025-01-04',
+                status_pengajuan: 'Perlu Perbaikan',
+                progress_persen: 5,
+                catatan_pemohon: 'Fasilitasi Ranperda tentang Tata Ruang',
+                tahapan_proses: null
+            },
+            {
+                username: 'limapuluhkota',
+                nomor_registrasi: 'EKL-202501-0005',
+                id_modul: 1,
+                tanggal_pengajuan: '2025-01-12',
+                status_pengajuan: 'Menunggu Verifikasi',
+                progress_persen: 0,
+                catatan_pemohon: 'Permohonan evaluasi kelembagaan dinas pendidikan',
+                tahapan_proses: null
+            },
+            {
+                username: 'payakumbuh',
+                nomor_registrasi: 'PBU-202501-0003',
+                id_modul: 3,
+                tanggal_pengajuan: '2025-01-13',
+                status_pengajuan: 'Menunggu Verifikasi',
+                progress_persen: 0,
+                catatan_pemohon: 'Pembentukan UPTD Puskesmas',
+                tahapan_proses: null
+            },
+            {
+                username: 'pasaman',
+                nomor_registrasi: 'EKL-202501-0006',
+                id_modul: 1,
+                tanggal_pengajuan: '2025-01-14',
+                status_pengajuan: 'Menunggu Verifikasi',
+                progress_persen: 0,
+                catatan_pemohon: 'Evaluasi kelembagaan bidang perhubungan',
+                tahapan_proses: null
+            },
+            {
+                username: 'dharmasraya',
+                nomor_registrasi: 'FRA-202501-0005',
+                id_modul: 2,
+                tanggal_pengajuan: '2025-01-15',
+                status_pengajuan: 'Menunggu Verifikasi',
+                progress_persen: 0,
+                catatan_pemohon: 'Fasilitasi Ranperda tentang Pengelolaan Pasar',
+                tahapan_proses: null
+            },
+            {
+                username: 'padang',
+                nomor_registrasi: 'PBU-202501-0004',
+                id_modul: 3,
+                tanggal_pengajuan: '2025-01-16',
+                status_pengajuan: 'Menunggu Verifikasi',
+                progress_persen: 0,
+                catatan_pemohon: 'Pembentukan UPTD Rumah Potong Hewan',
+                tahapan_proses: null
+            }
+        ];
+        console.log('   📝 Seeding pengajuan...');
+        for (const template of pengajuanTemplates) {
+            const { username, ...pengajuanData } = template;
+            const id_user = userIdMap[username];
+
+            if (!id_user) {
+                console.warn(`Warning: User ${username} not found, skipping pengajuan`);
+                continue;
+            }
+
+            await Pengajuan.create({
+                ...pengajuanData,
+                id_user: id_user,
+                created_at: new Date(pengajuanData.tanggal_pengajuan),
+                updated_at: new Date()
+            });
+        }
+        console.log(`   ✅ Berhasil seed ${pengajuanTemplates.length} pengajuan`);
+
+    } catch (error) {
+        console.error("Error seeding users and pengajuan:", error);
+        throw error;
+    }
+}
+
+module.exports = seedUsersAndPengajuan;

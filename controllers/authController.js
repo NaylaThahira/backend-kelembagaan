@@ -1,0 +1,101 @@
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+require('dotenv').config();
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+
+// Login
+exports.login = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username dan password wajib diisi'
+            });
+        }
+
+        const user = await User.findOne({ where: { username } });
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Username atau password salah'
+            });
+        }
+
+        const isPasswordValid = await user.comparePassword(password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: 'Username atau password salah'
+            });
+        }
+
+        const token = jwt.sign(
+            {
+                id: user.id,
+                username: user.username,
+                role: user.role,
+                kabupaten_kota: user.kabupaten_kota
+            },
+            JWT_SECRET,
+            { expiresIn: '24h' } 
+        );
+
+        res.json({
+            success: true,
+            message: 'Login berhasil',
+            data: {
+                token,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    role: user.role,
+                    kabupaten_kota: user.kabupaten_kota
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error during login:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan saat login'
+        });
+    }
+};
+
+exports.verifyToken = async (req, res) => {
+    try {
+
+        res.json({
+            success: true,
+            data: {
+                user: req.user
+            }
+        });
+    } catch (error) {
+        console.error('Error verifying token:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan saat verifikasi token'
+        });
+    }
+};
+
+exports.logout = async (req, res) => {
+    try {
+
+        res.json({
+            success: true,
+            message: 'Logout berhasil'
+        });
+    } catch (error) {
+        console.error('Error during logout:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan saat logout'
+        });
+    }
+};

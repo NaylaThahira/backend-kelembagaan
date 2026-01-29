@@ -4,7 +4,7 @@ const User = require('../models/User');
 exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.findAll({
-            where: { role: 'pemohon' },
+            where: { role: 'kab/kota' },
             attributes: ['id', 'kabupaten_kota', 'username', 'created_at'],
             order: [['created_at', 'DESC']]
         });
@@ -49,7 +49,7 @@ exports.createUser = async (req, res) => {
             kabupaten_kota,
             username,
             password,
-            role: 'pemohon'
+            role: 'kab/kota'
         });
 
         res.status(201).json({
