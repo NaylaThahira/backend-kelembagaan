@@ -16,12 +16,14 @@ const userRoutes = require("./routes/users");
 const pengajuanRoutes = require("./routes/pengajuan");
 const uploadRoutes = require("./routes/upload");
 const modulLayananRoutes = require("./routes/modulLayanan");
+const notifikasiRoutes = require("./routes/notifikasiRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/pengajuan", pengajuanRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/modul-layanan", modulLayananRoutes);
+app.use("/api/notifikasi", notifikasiRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");

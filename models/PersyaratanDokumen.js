@@ -36,4 +36,4 @@ const PersyaratanDokumen = sequelize.define(
   }
 );
 
-module.exports = { PersyaratanDokumen };
+module.exports = PersyaratanDokumen ;

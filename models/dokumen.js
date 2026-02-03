@@ -52,4 +52,4 @@ const Dokumen = sequelize.define(
   }
 );
 
-module.exports = { Dokumen };
+module.exports =  Dokumen ;
