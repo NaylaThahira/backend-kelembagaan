@@ -202,10 +202,9 @@ const createPengajuan = async (req, res) => {
                 id_user: id_user,
                 id_modul: id_modul,
                 tanggal_pengajuan: new Date(),
-                status_pengajuan: "Menunggu Verifikasi",  // Status awal: langsung ke verifikasi
+                status_pengajuan: "Menunggu Verifikasi",  // Status awal
                 progress_persen: 0,
                 catatan_pemohon: catatan_pemohon || null,
-                tahapan_proses: null,
                 catatan_revisi: null,
                 created_at: new Date(),
                 updated_at: new Date(),
@@ -336,7 +335,7 @@ const getPengajuanByUser = async (req, res) => {
             tanggal: item.tanggal_pengajuan,
             status: item.status_pengajuan === "Diajukan" ? "Menunggu Verifikasi" : item.status_pengajuan,
             progress: item.progress_persen,
-            tahapan_proses: item.tahapan_proses,
+
             catatan_revisi: item.catatan_revisi,
             catatan_pemohon: item.catatan_pemohon,
             file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),  // Convert path!
@@ -390,13 +389,14 @@ const getAllPengajuan = async (req, res) => {
         const dataFormatted = pengajuan.map((item, index) => ({
             no: index + 1,
             id_pengajuan: item.id_pengajuan,
+            id_modul: item.id_modul, // Tambahkan id_modul untuk filter
             nomor_registrasi: item.nomor_registrasi,
             pemohon: item.user ? item.user.kabupaten_kota : "Tidak diketahui",
             nama_layanan: item.modul ? item.modul.nama_modul : "Tidak diketahui",
             tanggal: item.tanggal_pengajuan,
             status: item.status_pengajuan,
             progress: item.progress_persen,
-            tahapan_proses: item.tahapan_proses,
+
             catatan_revisi: item.catatan_revisi,
             catatan_pemohon: item.catatan_pemohon,
             file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),  // Convert path!
@@ -452,13 +452,14 @@ const getPengajuanByStatus = async (req, res) => {
         const dataFormatted = pengajuan.map((item, index) => ({
             no: index + 1,
             id_pengajuan: item.id_pengajuan,
+            id_modul: item.id_modul, // Tambahkan id_modul untuk filter
             nomor_registrasi: item.nomor_registrasi,
             pemohon: item.user ? item.user.kabupaten_kota : "Tidak diketahui",
             nama_layanan: item.modul ? item.modul.nama_modul : "Tidak diketahui",
             tanggal: item.tanggal_pengajuan,
             status: item.status_pengajuan,
             progress: item.progress_persen,
-            tahapan_proses: item.tahapan_proses,
+
             catatan_revisi: item.catatan_revisi,
             catatan_pemohon: item.catatan_pemohon,
             file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),  // Convert path!
@@ -485,7 +486,6 @@ const updatePengajuanStatus = async (req, res) => {
         const { id_pengajuan } = req.params;
         const {
             status_pengajuan,
-            tahapan_proses,
             catatan_revisi,
             progress_persen,
             created_by  // Username admin
@@ -504,7 +504,6 @@ const updatePengajuanStatus = async (req, res) => {
         // Update status pengajuan
         await pengajuan.update({
             status_pengajuan: status_pengajuan || pengajuan.status_pengajuan,
-            tahapan_proses: tahapan_proses !== undefined ? tahapan_proses : pengajuan.tahapan_proses,
             progress_persen: progress_persen !== undefined ? progress_persen : pengajuan.progress_persen,
             updated_at: new Date()
         });
@@ -523,10 +522,6 @@ const updatePengajuanStatus = async (req, res) => {
         try {
             let notifJudul = 'Perubahan Status Pengajuan';
             let notifPesan = `Status pengajuan ${pengajuan.nomor_registrasi} telah diubah menjadi "${status_pengajuan}"`;
-
-            if (tahapan_proses) {
-                notifPesan += ` - ${tahapan_proses}`;
-            }
 
             await createNotifikasi(
                 pengajuan.id_user,
@@ -644,11 +639,18 @@ const selesaikanPengajuan = async (req, res) => {
             });
         }
 
-        // Validate status
-        if (pengajuan.status_pengajuan !== 'Dalam Proses') {
+        // Validate status - Pastikan status adalah salah satu dari tahapan proses terakhir
+        const validStatusForCompletion = [
+            'Penjadwalan Rapat',
+            'Pelaksanaan Rapat Fasilitasi',
+            'Penyusunan Draft Rekomendasi/Hasil Fasilitasi',
+            'Proses Penandatanganan'
+        ];
+
+        if (!validStatusForCompletion.includes(pengajuan.status_pengajuan)) {
             return res.status(400).json({
                 success: false,
-                message: "Hanya pengajuan dengan status 'Dalam Proses' yang bisa diselesaikan"
+                message: "Pengajuan harus berada dalam tahapan proses sebelum bisa diselesaikan"
             });
         }
 
@@ -661,7 +663,6 @@ const selesaikanPengajuan = async (req, res) => {
             file_surat_rekomendasi: filePath,
             tanggal_selesai: new Date(),
             progress_persen: 100,
-            tahapan_proses: null,  // Clear tahapan karena sudah selesai
             updated_at: new Date()
         });
 
@@ -788,7 +789,6 @@ const submitRevisi = async (req, res) => {
         await pengajuan.update({
             status_pengajuan: "Menunggu Verifikasi",
             progress_persen: 0,
-            tahapan_proses: null,
             updated_at: new Date()
         }, { transaction: t });
 

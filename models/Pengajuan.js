@@ -30,7 +30,6 @@ const Pengajuan = sequelize.define(
       defaultValue: 0,
     },
     catatan_pemohon: DataTypes.TEXT,
-    tahapan_proses: DataTypes.STRING(100),
     file_surat_rekomendasi: DataTypes.STRING(255),
     tanggal_selesai: DataTypes.DATE,
   },
