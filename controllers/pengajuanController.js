@@ -193,7 +193,7 @@ const createPengajuan = async (req, res) => {
 
 
         const nomorRegistrasi = await generateNomorRegistrasi(id_modul);
-        console.log("✅ Generated nomor registrasi:", nomorRegistrasi);
+        console.log("Generated nomor registrasi:", nomorRegistrasi);
 
 
         const pengajuan = await Pengajuan.create(
@@ -212,7 +212,7 @@ const createPengajuan = async (req, res) => {
             { transaction: t }
         );
 
-        console.log("✅ Pengajuan created with ID:", pengajuan.id_pengajuan);
+        console.log("Pengajuan created with ID:", pengajuan.id_pengajuan);
 
 
         const dokumenSaved = [];
@@ -232,7 +232,7 @@ const createPengajuan = async (req, res) => {
                 );
                 dokumenSaved.push(dokumenBaru);
             }
-            console.log(`✅ Saved ${dokumenSaved.length} dokumen`);
+            console.log(`Saved ${dokumenSaved.length} dokumen`);
         }
 
 
@@ -782,19 +782,19 @@ const submitRevisi = async (req, res) => {
                 }, { transaction: t });
             }
 
-            console.log(`✅ Updated ${dokumen_upload.length} dokumen`);
+            console.log(`Updated ${dokumen_upload.length} dokumen`);
         }
 
-        // Update status pengajuan kembali ke "Menunggu Verifikasi"
         await pengajuan.update({
             status_pengajuan: "Menunggu Verifikasi",
             progress_persen: 0,
+            tanggal_pengajuan: new Date(), 
             updated_at: new Date()
         }, { transaction: t });
 
         await t.commit();
 
-        console.log("✅ Revisi berhasil disubmit");
+        console.log("Revisi berhasil disubmit");
 
         res.status(200).json({
             success: true,
@@ -807,7 +807,7 @@ const submitRevisi = async (req, res) => {
         });
     } catch (error) {
         await t.rollback();
-        console.error("❌ Error submitting revisi:", error);
+        console.error("Error submitting revisi:", error);
         res.status(500).json({
             success: false,
             message: "Gagal mengirim revisi",

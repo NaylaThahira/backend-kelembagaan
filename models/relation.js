@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Pengajuan = require("./Pengajuan");
 const ModulLayanan = require("./modulLayanan");
-const PersyaratanDokumen  = require("./PersyaratanDokumen");
+const PersyaratanDokumen = require("./PersyaratanDokumen");
 const Dokumen = require("./dokumen");
 const CatatanRevisi = require("./CatatanRevisi");
 

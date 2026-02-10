@@ -1,30 +1,54 @@
 const { User, Pengajuan } = require("../models/relation");
 const usersData = [
-    { kabupaten_kota: 'Kab. Padang Pariaman', username: 'padangpariaman', password: 'padangpariaman123',alamat: 'Jl. Raya Pariaman – Padang, Padang Pariaman, Sumatera Barat',
-    no_hp: '0751-123456', role: 'kab/kota'},
-    { kabupaten_kota: 'Kota Bukittinggi', username: 'bukittinggi', password: 'bukittinggi123', role: 'kab/kota' },
-    { kabupaten_kota: 'Kab. Agam', username: 'agam', password: 'agam123',  alamat: 'Jl. Kusuma Bhakti, Bukit Gula Bancah, Bukittinggi',
-    no_hp: '0752-33369', role: 'kab/kota' },
-    { kabupaten_kota: 'Kota Padang', username: 'padang', password: 'padang123', alamat: 'Jl. Raya Lubuk Basung, Kabupaten Agam, Sumatera Barat',
-    no_hp: '0751-654321', role: 'kab/kota' },
-    { kabupaten_kota: 'Kab. Solok', username: 'solok', password: 'solok123', alamat: 'Jl. Bagindo Aziz Chan By Pass, Air Pacah, Padang, Sumatera Barat',
-    no_hp: '0751-4640800', role: 'kab/kota' },
-    { kabupaten_kota: 'Kab. Lima Puluh Kota', username: 'limapuluhkota', password: 'limapuluhkota123',  alamat: 'Jl. Raya Arosuka, Kabupaten Solok, Sumatera Barat',
-    no_hp: '0755-21122', role: 'kab/kota' },
-    { kabupaten_kota: 'Kota Payakumbuh', username: 'payakumbuh', password: 'payakumbuh123', alamat: 'Jl. Veteran No.43, Payakumbuh, Sumatera Barat',
-    no_hp: '0752-92000', role: 'kab/kota' },
-    { kabupaten_kota: 'Kab. Pasaman', username: 'pasaman', password: 'pasaman123', alamat: 'Jl. Jenderal Sudirman, Lubuk Sikaping, Kabupaten Pasaman',
-    no_hp: '0753-31010', role: 'kab/kota' },
-    { kabupaten_kota: 'Kab. Sijunjung', username: 'sijunjung', password: 'sijunjung123',alamat: 'Jl. M. Yamin, Muaro Sijunjung, Sumatera Barat',
-    no_hp: '0754-21045', role: 'kab/kota' },
-    { kabupaten_kota: 'Kota Solok', username: 'kotasolok', password: 'kotasolok123', alamat: 'Jl. Sudirman No.25, Kota Solok, Sumatera Barat',
-    no_hp: '0755-20110', role: 'kab/kota' },
-    { kabupaten_kota: 'Kab. Dharmasraya', username: 'dharmasraya', password: 'dharmasraya123', alamat: 'Jl. Lintas Sumatera, Pulau Punjung, Dharmasraya',
-    no_hp: '0754-40123', role: 'kab/kota' },
-    { kabupaten_kota: 'Kab. Pasaman Barat', username: 'pasamanbarat', password: 'pasamanbarat123',alamat: 'Jl. Soekarno Hatta, Simpang Empat, Pasaman Barat',
-    no_hp: '0753-49000', role: 'kab/kota' },
-    { kabupaten_kota: 'Kab. Tanah Datar', username: 'tanahdatar', password: 'tanahdatar123',  alamat: 'Jl. Sultan Alam Bagagarsyah, Batusangkar, Tanah Datar',
-    no_hp: '0752-71100', role: 'kab/kota' }
+    {
+        kabupaten_kota: 'Kab. Padang Pariaman', username: 'padangpariaman', password: 'padangpariaman123', alamat: 'Jl. Raya Pariaman – Padang, Padang Pariaman, Sumatera Barat',
+        no_hp: '0751-123456', role: 'kab/kota'
+    },
+    { kabupaten_kota: 'Kota Bukittinggi', username: 'bukittinggi', password: 'bukittinggi123', alamat: 'Jl. Teuku Umar No.1, Bukittinggi, Sumatera Barat', no_hp: '0752-21333', role: 'kab/kota' },
+    {
+        kabupaten_kota: 'Kab. Agam', username: 'agam', password: 'agam123', alamat: 'Jl. Kusuma Bhakti, Bukit Gula Bancah, Bukittinggi',
+        no_hp: '0752-33369', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kota Padang', username: 'padang', password: 'padang123', alamat: 'Jl. Raya Lubuk Basung, Kabupaten Agam, Sumatera Barat',
+        no_hp: '0751-654321', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kab. Solok', username: 'solok', password: 'solok123', alamat: 'Jl. Bagindo Aziz Chan By Pass, Air Pacah, Padang, Sumatera Barat',
+        no_hp: '0751-4640800', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kab. Lima Puluh Kota', username: 'limapuluhkota', password: 'limapuluhkota123', alamat: 'Jl. Raya Arosuka, Kabupaten Solok, Sumatera Barat',
+        no_hp: '0755-21122', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kota Payakumbuh', username: 'payakumbuh', password: 'payakumbuh123', alamat: 'Jl. Veteran No.43, Payakumbuh, Sumatera Barat',
+        no_hp: '0752-92000', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kab. Pasaman', username: 'pasaman', password: 'pasaman123', alamat: 'Jl. Jenderal Sudirman, Lubuk Sikaping, Kabupaten Pasaman',
+        no_hp: '0753-31010', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kab. Sijunjung', username: 'sijunjung', password: 'sijunjung123', alamat: 'Jl. M. Yamin, Muaro Sijunjung, Sumatera Barat',
+        no_hp: '0754-21045', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kota Solok', username: 'kotasolok', password: 'kotasolok123', alamat: 'Jl. Sudirman No.25, Kota Solok, Sumatera Barat',
+        no_hp: '0755-20110', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kab. Dharmasraya', username: 'dharmasraya', password: 'dharmasraya123', alamat: 'Jl. Lintas Sumatera, Pulau Punjung, Dharmasraya',
+        no_hp: '0754-40123', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kab. Pasaman Barat', username: 'pasamanbarat', password: 'pasamanbarat123', alamat: 'Jl. Soekarno Hatta, Simpang Empat, Pasaman Barat',
+        no_hp: '0753-49000', role: 'kab/kota'
+    },
+    {
+        kabupaten_kota: 'Kab. Tanah Datar', username: 'tanahdatar', password: 'tanahdatar123', alamat: 'Jl. Sultan Alam Bagagarsyah, Batusangkar, Tanah Datar',
+        no_hp: '0752-71100', role: 'kab/kota'
+    }
 ];
 
 async function seedUsersAndPengajuan() {

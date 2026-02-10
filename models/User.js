@@ -27,11 +27,13 @@ const User = sequelize.define(
         },
         alamat: {
             type: DataTypes.STRING(300),
-            allowNull: false,
+            allowNull: true,
+            defaultValue: '',
         },
         no_hp: {
             type: DataTypes.STRING(300),
-            allowNull: false,
+            allowNull: true,
+            defaultValue: '',
         },
         role: {
             type: DataTypes.ENUM('admin', 'kab/kota'),

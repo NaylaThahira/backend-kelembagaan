@@ -5,7 +5,7 @@ exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.findAll({
             where: { role: 'kab/kota' },
-            attributes: ['id', 'kabupaten_kota', 'username', 'created_at'],
+            attributes: ['id', 'kabupaten_kota', 'username', 'alamat', 'no_hp', 'created_at'],
             order: [['created_at', 'DESC']]
         });
 
@@ -25,7 +25,7 @@ exports.getAllUsers = async (req, res) => {
 // Create new user
 exports.createUser = async (req, res) => {
     try {
-        const { kabupaten_kota, username, password } = req.body;
+        const { kabupaten_kota, username, password, alamat, no_hp } = req.body;
 
         // Validation
         if (!kabupaten_kota || !username || !password) {
@@ -49,7 +49,9 @@ exports.createUser = async (req, res) => {
             kabupaten_kota,
             username,
             password,
-            role: 'kab/kota'
+            role: 'kab/kota',
+            alamat: alamat || '',
+            no_hp: no_hp || ''
         });
 
         res.status(201).json({
@@ -58,7 +60,9 @@ exports.createUser = async (req, res) => {
             data: {
                 id: newUser.id,
                 kabupaten_kota: newUser.kabupaten_kota,
-                username: newUser.username
+                username: newUser.username,
+                alamat: newUser.alamat,
+                no_hp: newUser.no_hp
             }
         });
     } catch (error) {
@@ -74,7 +78,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { kabupaten_kota, username, password } = req.body;
+        const { kabupaten_kota, username, password, alamat, no_hp } = req.body;
 
         // Find user
         const user = await User.findByPk(id);
@@ -105,7 +109,9 @@ exports.updateUser = async (req, res) => {
         // Prepare update data
         const updateData = {
             kabupaten_kota,
-            username
+            username,
+            alamat: alamat !== undefined ? alamat : user.alamat,
+            no_hp: no_hp !== undefined ? no_hp : user.no_hp
         };
 
         // Only include password if it's provided and not empty
@@ -155,6 +161,28 @@ exports.deleteUser = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Gagal menghapus akun'
+        });
+    }
+};
+
+// Get kabupaten/kota info for public (no authentication required)
+exports.getKabKotaInfo = async (req, res) => {
+    try {
+        const kabKotaList = await User.findAll({
+            where: { role: 'kab/kota' },
+            attributes: ['kabupaten_kota', 'alamat', 'no_hp'],
+            order: [['kabupaten_kota', 'ASC']]
+        });
+
+        res.json({
+            success: true,
+            data: kabKotaList
+        });
+    } catch (error) {
+        console.error('Error fetching kab/kota info:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Gagal mengambil informasi kabupaten/kota'
         });
     }
 };
