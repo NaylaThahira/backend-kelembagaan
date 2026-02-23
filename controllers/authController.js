@@ -38,10 +38,12 @@ exports.login = async (req, res) => {
                 id: user.id,
                 username: user.username,
                 role: user.role,
-                kabupaten_kota: user.kabupaten_kota
+                kabupaten_kota: user.kabupaten_kota,
+                alamat: user.alamat,
+                no_hp: user.no_hp
             },
             JWT_SECRET,
-            { expiresIn: '24h' } 
+            { expiresIn: '24h' }
         );
 
         res.json({
@@ -53,7 +55,9 @@ exports.login = async (req, res) => {
                     id: user.id,
                     username: user.username,
                     role: user.role,
-                    kabupaten_kota: user.kabupaten_kota
+                    kabupaten_kota: user.kabupaten_kota,
+                    alamat: user.alamat,
+                    no_hp: user.no_hp
                 }
             }
         });

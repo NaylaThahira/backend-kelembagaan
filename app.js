@@ -17,6 +17,7 @@ const pengajuanRoutes = require("./routes/pengajuan");
 const uploadRoutes = require("./routes/upload");
 const modulLayananRoutes = require("./routes/modulLayanan");
 const notifikasiRoutes = require("./routes/notifikasiRoutes");
+const profileRoutes = require("./routes/profile");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -24,6 +25,7 @@ app.use("/api/pengajuan", pengajuanRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/modul-layanan", modulLayananRoutes);
 app.use("/api/notifikasi", notifikasiRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");

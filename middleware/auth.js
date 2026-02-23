@@ -21,7 +21,9 @@ exports.authenticate = async (req, res, next) => {
             id: decoded.id,
             username: decoded.username,
             role: decoded.role,
-            kabupaten_kota: decoded.kabupaten_kota
+            kabupaten_kota: decoded.kabupaten_kota,
+            alamat: decoded.alamat,
+            no_hp: decoded.no_hp
         };
 
         next();
