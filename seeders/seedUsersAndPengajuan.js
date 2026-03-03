@@ -82,12 +82,12 @@ async function seedUsersAndPengajuan() {
         const { Op } = require("sequelize");
         await User.destroy({ where: { role: { [Op.ne]: 'admin' } } });
 
-        console.log('   📝 Seeding users kab/kota...');
+        console.log('Seeding users kab/kota...');
         for (const userData of usersData) {
             await User.create(userData);
         }
-        console.log(`   ✅ Berhasil seed ${usersData.length} users kab/kota`);
-        console.log('   ℹ️  Tidak ada data dummy pengajuan yang di-seed');
+        console.log(`Berhasil seed ${usersData.length} users kab/kota`);
+        console.log('Tidak ada data dummy pengajuan yang di-seed');
 
     } catch (error) {
         console.error("Error seeding users and pengajuan:", error);

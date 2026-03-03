@@ -7,6 +7,26 @@ const {
 const sequelize = require("../config/database");
 const { createNotifikasi } = require("./notifikasiController");
 
+const PROGRESS_MAP = {
+    'Penjadwalan Rapat': 20,
+    'Pelaksanaan Rapat Fasilitasi': 40,
+    'Penyusunan Draft Rekomendasi/Hasil Fasilitasi': 60,
+    'Proses Penandatanganan': 80,
+};
+
+const hitungProgress = (item) => {
+    if (item.status_verifikasi === 'Selesai') return 100;
+    if (item.status_verifikasi === 'Disetujui') {
+        const logs = item.log_proses || [];
+        if (logs.length > 0) {
+            const latest = logs.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
+            return PROGRESS_MAP[latest.proses?.nama_proses] ?? 20;
+        }
+        return 20;
+    }
+    return 0;
+};
+
 
 const generateNomorRegistrasi = async (id_modul) => {
     try {
@@ -91,10 +111,10 @@ const getPersyaratanByModul = async (req, res) => {
                 "id_persyaratan",
                 "nama_dokumen",
                 "format_file",
-                "wajib",
+                "is_required",
             ],
             order: [
-                ["wajib", "DESC"],
+                ["is_required", "DESC"],
                 ["nama_dokumen", "ASC"],
             ],
         });
@@ -133,7 +153,7 @@ const createPengajuan = async (req, res) => {
             dokumen_upload,
         } = req.body;
 
-        console.log("📝 Creating pengajuan with data:", {
+        console.log("Creating pengajuan with data:", {
             id_user,
             id_modul,
             nama_kabupaten,
@@ -161,7 +181,7 @@ const createPengajuan = async (req, res) => {
         const persyaratanWajib = await PersyaratanDokumen.findAll({
             where: {
                 id_modul: id_modul,
-                wajib: true,
+                is_required: true,
             },
         });
 
@@ -202,12 +222,9 @@ const createPengajuan = async (req, res) => {
                 id_user: id_user,
                 id_modul: id_modul,
                 tanggal_pengajuan: new Date(),
-                status_pengajuan: "Menunggu Verifikasi",  // Status awal
-                progress_persen: 0,
+                status_verifikasi: "Menunggu Verifikasi",
                 catatan_pemohon: catatan_pemohon || null,
-                catatan_revisi: null,
                 created_at: new Date(),
-                updated_at: new Date(),
             },
             { transaction: t }
         );
@@ -225,7 +242,6 @@ const createPengajuan = async (req, res) => {
                         nama_file: dok.nama_file,
                         path_file: dok.path_file,
                         jenis_dokumen: dok.jenis_dokumen || null,
-                        status_verifikasi: "Menunggu Verifikasi",
                         created_at: new Date(),
                     },
                     { transaction: t }
@@ -278,9 +294,9 @@ const createPengajuan = async (req, res) => {
                     'pengajuan_baru'
                 );
             }
-            console.log(`✅ Created notifications for ${admins.length} admins`);
+            console.log(`Created notifications for ${admins.length} admins`);
         } catch (notifError) {
-            console.error("⚠️ Error creating notifications:", notifError);
+            console.error("Error creating notifications:", notifError);
 
         }
 
@@ -291,7 +307,7 @@ const createPengajuan = async (req, res) => {
         });
     } catch (error) {
         await t.rollback();
-        console.error("❌ Error creating pengajuan:", error);
+        console.error("Error creating pengajuan:", error);
         res.status(500).json({
             success: false,
             message: "Gagal membuat pengajuan",
@@ -303,166 +319,159 @@ const createPengajuan = async (req, res) => {
 const getPengajuanByUser = async (req, res) => {
     try {
         const { id_user } = req.params;
+        const { LogProses, Proses } = require('../models/relation');
+
+        const pengajuanList = await Pengajuan.findAll({
+            where: { id_user },
+            include: [
+                { model: ModulLayanan, as: 'modul', attributes: ['nama_modul'] },
+                {
+                    model: LogProses,
+                    as: 'log_proses',
+                    include: [{ model: Proses, as: 'proses', attributes: ['nama_proses'] }],
+                    required: false
+                }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+
+        const convertToUrlPath = (p) => {
+            if (!p) return null;
+            return p.startsWith('/') ? p : '/' + p.replace(/\\/g, '/');
+        };
+
+        const getStatusTampil = (item) => {
+            if (item.status_verifikasi === 'Disetujui') {
+                const logs = item.log_proses || [];
+                if (logs.length > 0) {
+                    const latest = logs.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
+                    return latest.proses?.nama_proses || item.status_verifikasi;
+                }
+            }
+            return item.status_verifikasi === 'Diajukan' ? 'Menunggu Verifikasi' : item.status_verifikasi;
+        };
+
+        const data = pengajuanList.map((item, index) => ({
+            no: index + 1,
+            id_pengajuan: item.id_pengajuan,
+            id_modul: item.id_modul,
+            nomor_registrasi: item.nomor_registrasi,
+            nama_layanan: item.modul?.nama_modul || 'Tidak diketahui',
+            tanggal: item.tanggal_pengajuan,
+            status_verifikasi: item.status_verifikasi,
+            status: getStatusTampil(item),
+            progress: hitungProgress(item),
+            catatan_pemohon: item.catatan_pemohon,
+            file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),
+            tanggal_selesai: item.tanggal_selesai
+        }));
+
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error('Error getPengajuanByUser:', error);
+        res.status(500).json({ success: false, message: 'Gagal mengambil riwayat pengajuan', error: error.message });
+    }
+};
+
+
+const getAllPengajuan = async (req, res) => {
+    try {
+        const User = require('../models/User');
+        const { LogProses, Proses } = require('../models/relation');
+
+        const pengajuanList = await Pengajuan.findAll({
+            include: [
+                { model: ModulLayanan, as: 'modul', attributes: ['nama_modul'] },
+                { model: User, as: 'user', attributes: ['kabupaten_kota'] },
+                {
+                    model: LogProses,
+                    as: 'log_proses',
+                    include: [{ model: Proses, as: 'proses', attributes: ['nama_proses'] }],
+                    required: false
+                }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+
+        const convertToUrlPath = (p) => {
+            if (!p) return null;
+            return p.startsWith('/') ? p : '/' + p.replace(/\\/g, '/');
+        };
+
+        const getStatusTampil = (item) => {
+            if (item.status_verifikasi === 'Disetujui') {
+                const logs = item.log_proses || [];
+                if (logs.length > 0) {
+                    const latest = logs.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
+                    return latest.proses?.nama_proses || item.status_verifikasi;
+                }
+            }
+            return item.status_verifikasi;
+        };
+
+        const data = pengajuanList.map((item, index) => ({
+            no: index + 1,
+            id_pengajuan: item.id_pengajuan,
+            id_modul: item.id_modul,
+            nomor_registrasi: item.nomor_registrasi,
+            pemohon: item.user?.kabupaten_kota || 'Tidak diketahui',
+            nama_layanan: item.modul?.nama_modul || 'Tidak diketahui',
+            tanggal: item.tanggal_pengajuan,
+            status_verifikasi: item.status_verifikasi,
+            status: getStatusTampil(item),
+            progress: hitungProgress(item),
+            catatan_pemohon: item.catatan_pemohon,
+            file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),
+            tanggal_selesai: item.tanggal_selesai
+        }));
+
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error('Error getAllPengajuan:', error);
+        res.status(500).json({ success: false, message: 'Gagal mengambil data pengajuan', error: error.message });
+    }
+};
+
+const getPengajuanByStatus = async (req, res) => {
+    try {
+        const { status } = req.params;
+        const User = require("../models/User");
+        const { LogProses, Proses } = require('../models/relation');
 
         const pengajuan = await Pengajuan.findAll({
-            where: { id_user: id_user },
+            where: { status_verifikasi: status },
             include: [
+                { model: ModulLayanan, as: "modul", attributes: ["nama_modul"] },
+                { model: User, as: "user", attributes: ["kabupaten_kota"] },
                 {
-                    model: ModulLayanan,
-                    as: "modul",
-                    attributes: ["nama_modul"]
+                    model: LogProses,
+                    as: 'log_proses',
+                    include: [{ model: Proses, as: 'proses', attributes: ['nama_proses'] }],
+                    required: false
                 }
             ],
             order: [["created_at", "DESC"]]
         });
 
-
         const convertToUrlPath = (filePath) => {
             if (!filePath) return null;
-
             if (filePath.startsWith('/')) return filePath;
-
             return '/' + filePath.replace(/\\/g, '/');
         };
-
 
         const dataFormatted = pengajuan.map((item, index) => ({
             no: index + 1,
             id_pengajuan: item.id_pengajuan,
             id_modul: item.id_modul,
             nomor_registrasi: item.nomor_registrasi,
-            nama_layanan: item.modul ? item.modul.nama_modul : "Tidak diketahui",
+            pemohon: item.user ? item.user.kabupaten_kota : 'Tidak diketahui',
+            nama_layanan: item.modul ? item.modul.nama_modul : 'Tidak diketahui',
             tanggal: item.tanggal_pengajuan,
-            status: item.status_pengajuan === "Diajukan" ? "Menunggu Verifikasi" : item.status_pengajuan,
-            progress: item.progress_persen,
-
-            catatan_revisi: item.catatan_revisi,
+            status_verifikasi: item.status_verifikasi,
+            status: item.status_verifikasi,
+            progress: hitungProgress(item),
             catatan_pemohon: item.catatan_pemohon,
-            file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),  // Convert path!
-            tanggal_selesai: item.tanggal_selesai
-        }));
-
-        res.status(200).json({
-            success: true,
-            data: dataFormatted
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Gagal mengambil riwayat pengajuan",
-            error: error.message
-        });
-    }
-};
-
-// GET - Semua pengajuan untuk admin
-const getAllPengajuan = async (req, res) => {
-    try {
-        const User = require("../models/User");
-
-        const pengajuan = await Pengajuan.findAll({
-            include: [
-                {
-                    model: ModulLayanan,
-                    as: "modul",
-                    attributes: ["nama_modul"]
-                },
-                {
-                    model: User,
-                    as: "user",
-                    attributes: ["kabupaten_kota"]
-                }
-            ],
-            order: [["created_at", "DESC"]]
-        });
-
-        // Helper function untuk convert Windows path ke URL path
-        const convertToUrlPath = (filePath) => {
-            if (!filePath) return null;
-            // Jika sudah ada prefix /, return as is
-            if (filePath.startsWith('/')) return filePath;
-            // Convert backslash ke forward slash dan tambah prefix /
-            return '/' + filePath.replace(/\\/g, '/');
-        };
-
-        // Transformasi data untuk frontend
-        const dataFormatted = pengajuan.map((item, index) => ({
-            no: index + 1,
-            id_pengajuan: item.id_pengajuan,
-            id_modul: item.id_modul, // Tambahkan id_modul untuk filter
-            nomor_registrasi: item.nomor_registrasi,
-            pemohon: item.user ? item.user.kabupaten_kota : "Tidak diketahui",
-            nama_layanan: item.modul ? item.modul.nama_modul : "Tidak diketahui",
-            tanggal: item.tanggal_pengajuan,
-            status: item.status_pengajuan,
-            progress: item.progress_persen,
-
-            catatan_revisi: item.catatan_revisi,
-            catatan_pemohon: item.catatan_pemohon,
-            file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),  // Convert path!
-            tanggal_selesai: item.tanggal_selesai
-        }));
-
-        res.status(200).json({
-            success: true,
-            data: dataFormatted
-        });
-    } catch (error) {
-        console.error("Error fetching all pengajuan:", error);
-        res.status(500).json({
-            success: false,
-            message: "Gagal mengambil data pengajuan",
-            error: error.message
-        });
-    }
-};
-
-// GET - Pengajuan berdasarkan status untuk admin
-const getPengajuanByStatus = async (req, res) => {
-    try {
-        const { status } = req.params;
-        const User = require("../models/User");
-
-        const pengajuan = await Pengajuan.findAll({
-            where: { status_pengajuan: status },
-            include: [
-                {
-                    model: ModulLayanan,
-                    as: "modul",
-                    attributes: ["nama_modul"]
-                },
-                {
-                    model: User,
-                    as: "user",
-                    attributes: ["kabupaten_kota"]
-                }
-            ],
-            order: [["created_at", "DESC"]]
-        });
-
-        // Helper function untuk convert Windows path ke URL path
-        const convertToUrlPath = (filePath) => {
-            if (!filePath) return null;
-            // Jika sudah ada prefix /, return as is
-            if (filePath.startsWith('/')) return filePath;
-            // Convert backslash ke forward slash dan tambah prefix /
-            return '/' + filePath.replace(/\\/g, '/');
-        };
-
-        const dataFormatted = pengajuan.map((item, index) => ({
-            no: index + 1,
-            id_pengajuan: item.id_pengajuan,
-            id_modul: item.id_modul, // Tambahkan id_modul untuk filter
-            nomor_registrasi: item.nomor_registrasi,
-            pemohon: item.user ? item.user.kabupaten_kota : "Tidak diketahui",
-            nama_layanan: item.modul ? item.modul.nama_modul : "Tidak diketahui",
-            tanggal: item.tanggal_pengajuan,
-            status: item.status_pengajuan,
-            progress: item.progress_persen,
-
-            catatan_revisi: item.catatan_revisi,
-            catatan_pemohon: item.catatan_pemohon,
-            file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),  // Convert path!
+            file_surat_rekomendasi: convertToUrlPath(item.file_surat_rekomendasi),
             tanggal_selesai: item.tanggal_selesai
         }));
 
@@ -480,78 +489,81 @@ const getPengajuanByStatus = async (req, res) => {
     }
 };
 
-// PUT - Update status pengajuan (untuk admin)
 const updatePengajuanStatus = async (req, res) => {
+    const t = await sequelize.transaction();
     try {
         const { id_pengajuan } = req.params;
         const {
-            status_pengajuan,
-            catatan_revisi,
-            progress_persen,
-            created_by  // Username admin
+            status_verifikasi,
+            catatan_revisi
         } = req.body;
 
-        const { Pengajuan, CatatanRevisi } = require("../models/relation");
-        const pengajuan = await Pengajuan.findByPk(id_pengajuan);
+        const { Pengajuan, CatatanRevisi, LogProses, Proses } = require('../models/relation');
+        const pengajuan = await Pengajuan.findByPk(id_pengajuan, { transaction: t });
 
         if (!pengajuan) {
-            return res.status(404).json({
-                success: false,
-                message: "Pengajuan tidak ditemukan"
-            });
+            await t.rollback();
+            return res.status(404).json({ success: false, message: 'Pengajuan tidak ditemukan' });
         }
 
-        // Update status pengajuan
-        await pengajuan.update({
-            status_pengajuan: status_pengajuan || pengajuan.status_pengajuan,
-            progress_persen: progress_persen !== undefined ? progress_persen : pengajuan.progress_persen,
-            updated_at: new Date()
-        });
+        const updateData = {
+            status_verifikasi: status_verifikasi || pengajuan.status_verifikasi,
+        };
 
-        // Jika ada catatan revisi, simpan ke tabel catatan_revisi
-        if (catatan_revisi && status_pengajuan === 'Perlu Perbaikan') {
+        if (status_verifikasi === 'Disetujui') {
+            updateData.verified_at = new Date();
+        }
+
+        await pengajuan.update(updateData, { transaction: t });
+        if (status_verifikasi === 'Disetujui') {
+            const prosesAwal = await Proses.findOne({
+                where: { nama_proses: 'Penjadwalan Rapat' },
+                transaction: t
+            });
+            if (prosesAwal) {
+                await LogProses.create({
+                    id_pengajuan: parseInt(id_pengajuan),
+                    id_proses: prosesAwal.id_proses,
+                    keterangan: 'Pengajuan diterima, menunggu penjadwalan rapat',
+                    created_at: new Date()
+                }, { transaction: t });
+            }
+        }
+
+        if (catatan_revisi && status_verifikasi === 'Perlu Perbaikan') {
             await CatatanRevisi.create({
-                id_pengajuan: id_pengajuan,
+                id_pengajuan: parseInt(id_pengajuan),
                 catatan: catatan_revisi,
-                created_by: created_by || 'admin',
                 created_at: new Date()
-            });
+            }, { transaction: t });
         }
 
-        // 🔔 Create notifikasi untuk pemohon jika ada perubahan status
-        try {
-            let notifJudul = 'Perubahan Status Pengajuan';
-            let notifPesan = `Status pengajuan ${pengajuan.nomor_registrasi} telah diubah menjadi "${status_pengajuan}"`;
+        await t.commit();
 
+        try {
+            const pesanMap = {
+                'Disetujui': `Pengajuan ${pengajuan.nomor_registrasi} telah disetujui dan masuk ke tahap Penjadwalan Rapat`,
+                'Perlu Perbaikan': `Pengajuan ${pengajuan.nomor_registrasi} dikembalikan untuk perbaikan dokumen`,
+            };
             await createNotifikasi(
                 pengajuan.id_user,
-                id_pengajuan,
-                notifJudul,
-                notifPesan,
+                parseInt(id_pengajuan),
+                'Perubahan Status Pengajuan',
+                pesanMap[status_verifikasi] || `Status pengajuan diubah menjadi "${status_verifikasi}"`,
                 'perubahan_status'
             );
-            console.log(`✅ Created notification for user ${pengajuan.id_user}`);
         } catch (notifError) {
-            console.error("⚠️ Error creating notification:", notifError);
-            // Don't fail the whole request if notification fails
+            console.error('Notif error:', notifError);
         }
 
-        res.status(200).json({
-            success: true,
-            message: "Status pengajuan berhasil diupdate",
-            data: pengajuan
-        });
+        res.status(200).json({ success: true, message: 'Status pengajuan berhasil diupdate', data: pengajuan });
     } catch (error) {
-        console.error("Error updating pengajuan:", error);
-        res.status(500).json({
-            success: false,
-            message: "Gagal mengupdate status pengajuan",
-            error: error.message
-        });
+        await t.rollback();
+        console.error('Error updating pengajuan:', error);
+        res.status(500).json({ success: false, message: 'Gagal mengupdate status pengajuan', error: error.message });
     }
 };
 
-// GET - Dokumen by pengajuan ID
 const getDokumenByPengajuan = async (req, res) => {
     try {
         const { id_pengajuan } = req.params;
@@ -583,7 +595,6 @@ const getDokumenByPengajuan = async (req, res) => {
     }
 };
 
-// GET - Catatan Revisi by pengajuan ID
 const getCatatanRevisi = async (req, res) => {
     try {
         const { id_pengajuan } = req.params;
@@ -591,7 +602,7 @@ const getCatatanRevisi = async (req, res) => {
 
         const catatanList = await CatatanRevisi.findAll({
             where: { id_pengajuan: id_pengajuan },
-            order: [["created_at", "DESC"]]  // Terbaru di atas
+            order: [["created_at", "DESC"]]  
         });
 
         res.status(200).json({
@@ -608,7 +619,6 @@ const getCatatanRevisi = async (req, res) => {
     }
 };
 
-// POST - Selesaikan pengajuan dengan upload surat rekomendasi
 const selesaikanPengajuan = async (req, res) => {
     try {
         const { id } = req.params;
@@ -621,7 +631,6 @@ const selesaikanPengajuan = async (req, res) => {
             });
         }
 
-        // Validate file type
         const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         if (!allowedTypes.includes(file.mimetype)) {
             return res.status(400).json({
@@ -630,7 +639,6 @@ const selesaikanPengajuan = async (req, res) => {
             });
         }
 
-        // Find pengajuan
         const pengajuan = await Pengajuan.findByPk(id);
         if (!pengajuan) {
             return res.status(404).json({
@@ -638,32 +646,19 @@ const selesaikanPengajuan = async (req, res) => {
                 message: "Pengajuan tidak ditemukan"
             });
         }
-
-        // Validate status - Pastikan status adalah salah satu dari tahapan proses terakhir
-        const validStatusForCompletion = [
-            'Penjadwalan Rapat',
-            'Pelaksanaan Rapat Fasilitasi',
-            'Penyusunan Draft Rekomendasi/Hasil Fasilitasi',
-            'Proses Penandatanganan'
-        ];
-
-        if (!validStatusForCompletion.includes(pengajuan.status_pengajuan)) {
+        if (pengajuan.status_verifikasi !== 'Disetujui') {
             return res.status(400).json({
                 success: false,
-                message: "Pengajuan harus berada dalam tahapan proses sebelum bisa diselesaikan"
+                message: "Pengajuan harus sudah disetujui dan dalam proses sebelum bisa diselesaikan"
             });
         }
 
-        // Update pengajuan
-        // Convert Windows backslash to forward slash dan tambah prefix /
         const filePath = '/' + file.path.replace(/\\/g, '/');
 
         await pengajuan.update({
-            status_pengajuan: 'Selesai',
+            status_verifikasi: 'Selesai',
             file_surat_rekomendasi: filePath,
             tanggal_selesai: new Date(),
-            progress_persen: 100,
-            updated_at: new Date()
         });
 
         res.status(200).json({
@@ -671,7 +666,7 @@ const selesaikanPengajuan = async (req, res) => {
             message: "Pengajuan berhasil diselesaikan",
             data: {
                 id_pengajuan: pengajuan.id_pengajuan,
-                status_pengajuan: 'Selesai',
+                status_verifikasi: 'Selesai',
                 file_surat_rekomendasi: pengajuan.file_surat_rekomendasi,
                 tanggal_selesai: pengajuan.tanggal_selesai
             }
@@ -686,7 +681,6 @@ const selesaikanPengajuan = async (req, res) => {
     }
 };
 
-// GET - Pengajuan by ID untuk halaman revisi
 const getPengajuanById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -722,7 +716,6 @@ const getPengajuanById = async (req, res) => {
     }
 };
 
-// PUT - Submit revisi pengajuan
 const submitRevisi = async (req, res) => {
     const t = await sequelize.transaction();
 
@@ -732,7 +725,6 @@ const submitRevisi = async (req, res) => {
 
         console.log("📝 Submitting revisi for pengajuan:", id);
 
-        // Cek pengajuan
         const pengajuan = await Pengajuan.findByPk(id);
         if (!pengajuan) {
             await t.rollback();
@@ -742,8 +734,7 @@ const submitRevisi = async (req, res) => {
             });
         }
 
-        // Validasi status harus "Perlu Perbaikan"
-        if (pengajuan.status_pengajuan !== "Perlu Perbaikan") {
+        if (pengajuan.status_verifikasi !== "Perlu Perbaikan") {
             await t.rollback();
             return res.status(400).json({
                 success: false,
@@ -751,17 +742,13 @@ const submitRevisi = async (req, res) => {
             });
         }
 
-        // Update catatan pemohon jika ada
         if (catatan_pemohon !== undefined) {
             await pengajuan.update({
                 catatan_pemohon: catatan_pemohon
             }, { transaction: t });
         }
-
-        // Jika ada dokumen baru, hapus dokumen lama yang sama persyaratannya dan insert yang baru
         if (dokumen_upload && dokumen_upload.length > 0) {
             for (const dok of dokumen_upload) {
-                // Hapus dokumen lama dengan id_persyaratan yang sama
                 await Dokumen.destroy({
                     where: {
                         id_pengajuan: id,
@@ -769,15 +756,12 @@ const submitRevisi = async (req, res) => {
                     },
                     transaction: t
                 });
-
-                // Insert dokumen baru
                 await Dokumen.create({
                     id_pengajuan: id,
                     id_persyaratan: dok.id_persyaratan,
                     nama_file: dok.nama_file,
                     path_file: dok.path_file,
                     jenis_dokumen: dok.jenis_dokumen || null,
-                    status_verifikasi: "Menunggu Verifikasi",
                     created_at: new Date()
                 }, { transaction: t });
             }
@@ -786,10 +770,8 @@ const submitRevisi = async (req, res) => {
         }
 
         await pengajuan.update({
-            status_pengajuan: "Menunggu Verifikasi",
-            progress_persen: 0,
-            tanggal_pengajuan: new Date(), 
-            updated_at: new Date()
+            status_verifikasi: "Menunggu Verifikasi",
+            tanggal_pengajuan: new Date(),
         }, { transaction: t });
 
         await t.commit();
@@ -802,7 +784,7 @@ const submitRevisi = async (req, res) => {
             data: {
                 id_pengajuan: pengajuan.id_pengajuan,
                 nomor_registrasi: pengajuan.nomor_registrasi,
-                status_pengajuan: "Menunggu Verifikasi"
+                status_verifikasi: "Menunggu Verifikasi"
             }
         });
     } catch (error) {

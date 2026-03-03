@@ -2,23 +2,20 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Buat folder uploads jika belum ada
 const uploadDir = path.join(__dirname, "../uploads/documents");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
     console.log("📁 Created uploads/documents directory");
 }
 
-// Konfigurasi storage
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        // Format: originalname_timestamp.ext
         const timestamp = Date.now();
         const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
-        const safeName = originalName.replace(/\s+/g, "_"); // ganti spasi dengan underscore
+        const safeName = originalName.replace(/\s+/g, "_"); 
         const ext = path.extname(safeName);
         const nameWithoutExt = path.basename(safeName, ext);
         const uniqueName = `${nameWithoutExt}_${timestamp}${ext}`;
@@ -26,7 +23,6 @@ const storage = multer.diskStorage({
     },
 });
 
-// Filter file type
 const fileFilter = (req, file, cb) => {
     const allowedMimes = [
         "application/pdf",
@@ -51,7 +47,6 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Setup multer
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,

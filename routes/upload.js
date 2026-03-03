@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../config/upload");
 
-// Upload single file
 router.post("/single", upload.single("file"), (req, res) => {
     try {
         if (!req.file) {
@@ -18,7 +17,7 @@ router.post("/single", upload.single("file"), (req, res) => {
             success: true,
             message: "File berhasil diupload",
             data: {
-                id_persyaratan: req.body.id_persyaratan, // dari form
+                id_persyaratan: req.body.id_persyaratan, 
                 nama_file: req.file.originalname,
                 path_file: fileUrl,
                 size: req.file.size,
@@ -35,7 +34,6 @@ router.post("/single", upload.single("file"), (req, res) => {
     }
 });
 
-// Upload multiple files (max 10)
 router.post("/multiple", upload.array("files", 10), (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {

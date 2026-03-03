@@ -23,17 +23,31 @@ const PersyaratanDokumen = sequelize.define(
     },
     format_file: {
       type: DataTypes.STRING(50),
-      allowNull: false,
+      allowNull: true,
     },
-    wajib: {
+    is_multiple: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    is_required: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   },
   {
     tableName: "persyaratan_dokumen",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   }
 );
 
-module.exports = PersyaratanDokumen ;
+module.exports = PersyaratanDokumen;

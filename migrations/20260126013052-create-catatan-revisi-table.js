@@ -24,11 +24,6 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: false
       },
-      created_by: {
-        type: Sequelize.STRING(100),
-        allowNull: false,
-        comment: 'Username admin yang membuat catatan'
-      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,

@@ -13,7 +13,7 @@ const Dokumen = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "Pengajuan",
+        model: "pengajuan",
         key: "id_pengajuan",
       },
     },
@@ -37,19 +37,21 @@ const Dokumen = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
-    status_verifikasi: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-    },
     created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    updated_at: {
       type: DataTypes.DATE,
       allowNull: true,
     },
   },
   {
     tableName: "dokumen",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   }
 );
 
-module.exports =  Dokumen ;
+module.exports = Dokumen;

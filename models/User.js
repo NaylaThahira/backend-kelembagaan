@@ -35,6 +35,11 @@ const User = sequelize.define(
             allowNull: true,
             defaultValue: '',
         },
+        foto_profile: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+            comment: 'Nama file foto profile',
+        },
         role: {
             type: DataTypes.ENUM('admin', 'kab/kota'),
             allowNull: false,
@@ -57,7 +62,6 @@ const User = sequelize.define(
         createdAt: 'created_at',
         updatedAt: 'updated_at',
         hooks: {
-            // Hook untuk enkripsi password sebelum disimpan
             beforeCreate: async (user, options) => {
                 if (user.password) {
                     const salt = await bcrypt.genSalt(10);
@@ -74,7 +78,6 @@ const User = sequelize.define(
     }
 );
 
-// Instance method untuk compare password
 User.prototype.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };

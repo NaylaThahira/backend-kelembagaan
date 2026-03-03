@@ -21,23 +21,27 @@ const Pengajuan = sequelize.define(
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
-    status_pengajuan: {
+    status_verifikasi: {
       type: DataTypes.STRING(50),
       allowNull: false,
     },
-    progress_persen: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
     catatan_pemohon: DataTypes.TEXT,
     file_surat_rekomendasi: DataTypes.STRING(255),
-    tanggal_selesai: DataTypes.DATE,
+    tanggal_selesai: DataTypes.DATEONLY,
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    verified_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "pengajuan",
     timestamps: true,
     createdAt: "created_at",
-    updatedAt: "updated_at",
+    updatedAt: false,
   }
 );
 

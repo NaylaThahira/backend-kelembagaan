@@ -2,20 +2,17 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Buat folder uploads/profiles jika belum ada
 const uploadDir = path.join(__dirname, "../uploads/profiles");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
     console.log("📁 Created uploads/profiles directory");
 }
 
-// Konfigurasi storage untuk profile photos
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        // Format: userid_timestamp.ext
         const timestamp = Date.now();
         const userId = req.user.id;
         const ext = path.extname(file.originalname);
@@ -24,7 +21,6 @@ const storage = multer.diskStorage({
     },
 });
 
-// Filter file type - hanya gambar
 const fileFilter = (req, file, cb) => {
     const allowedMimes = [
         "image/jpeg",
@@ -46,7 +42,6 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Setup multer untuk profile
 const uploadProfile = multer({
     storage: storage,
     fileFilter: fileFilter,

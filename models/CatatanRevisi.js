@@ -17,11 +17,6 @@ const CatatanRevisi = sequelize.define(
             type: DataTypes.TEXT,
             allowNull: false,
         },
-        created_by: {
-            type: DataTypes.STRING(100),
-            allowNull: false,
-            comment: "Username admin yang membuat catatan"
-        },
         created_at: {
             type: DataTypes.DATE,
             allowNull: false,

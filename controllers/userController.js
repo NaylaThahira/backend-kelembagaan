@@ -1,6 +1,5 @@
 const User = require('../models/User');
 
-// Get all users (pemohon only, not admin)
 exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.findAll({
@@ -22,12 +21,10 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-// Create new user
 exports.createUser = async (req, res) => {
     try {
         const { kabupaten_kota, username, password, alamat, no_hp } = req.body;
 
-        // Validation
         if (!kabupaten_kota || !username || !password) {
             return res.status(400).json({
                 success: false,
@@ -35,7 +32,6 @@ exports.createUser = async (req, res) => {
             });
         }
 
-        // Check if username already exists
         const existingUser = await User.findOne({ where: { username } });
         if (existingUser) {
             return res.status(400).json({
@@ -43,8 +39,6 @@ exports.createUser = async (req, res) => {
                 message: 'Username sudah terdaftar'
             });
         }
-
-        // Create user (password will be automatically hashed by beforeCreate hook)
         const newUser = await User.create({
             kabupaten_kota,
             username,
@@ -74,7 +68,6 @@ exports.createUser = async (req, res) => {
     }
 };
 
-// Update user
 exports.updateUser = async (req, res) => {
     try {
         const { id } = req.params;
@@ -89,7 +82,6 @@ exports.updateUser = async (req, res) => {
             });
         }
 
-        // Check if username is already used by another user
         if (username && username !== user.username) {
             const usernameExists = await User.findOne({
                 where: {
@@ -106,7 +98,6 @@ exports.updateUser = async (req, res) => {
             }
         }
 
-        // Prepare update data
         const updateData = {
             kabupaten_kota,
             username,
@@ -114,12 +105,10 @@ exports.updateUser = async (req, res) => {
             no_hp: no_hp !== undefined ? no_hp : user.no_hp
         };
 
-        // Only include password if it's provided and not empty
         if (password && password.trim() !== '') {
-            updateData.password = password; // Will be hashed by beforeUpdate hook
+            updateData.password = password;
         }
 
-        // Update user
         await user.update(updateData);
 
         res.json({
@@ -135,12 +124,9 @@ exports.updateUser = async (req, res) => {
     }
 };
 
-// Delete user
 exports.deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
-
-        // Find user
         const user = await User.findByPk(id);
         if (!user) {
             return res.status(404).json({
@@ -149,7 +135,6 @@ exports.deleteUser = async (req, res) => {
             });
         }
 
-        // Delete user
         await user.destroy();
 
         res.json({
@@ -165,7 +150,6 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
-// Get kabupaten/kota info for public (no authentication required)
 exports.getKabKotaInfo = async (req, res) => {
     try {
         const kabKotaList = await User.findAll({

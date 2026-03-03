@@ -14,10 +14,20 @@ const ModulLayanan = sequelize.define(
       allowNull: false,
     },
     deskripsi: DataTypes.TEXT,
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "modul_layanan",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   }
 );
 

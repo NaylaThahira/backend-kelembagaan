@@ -1,17 +1,12 @@
 const { ModulLayanan, PersyaratanDokumen } = require("../models/relation");
 
-// ===========================
-// GET ALL MODUL LAYANAN
-// ===========================
-// Contoh: GET /api/modul-layanan
-// Menampilkan semua modul layanan DENGAN persyaratan dokumennya (include)
 exports.getAllModulLayanan = async (req, res) => {
     try {
         const moduls = await ModulLayanan.findAll({
             include: [
                 {
                     model: PersyaratanDokumen,
-                    as: "persyaratan", // Sesuai dengan alias di relation.js
+                    as: "persyaratan", 
                 },
             ],
         });
@@ -31,11 +26,6 @@ exports.getAllModulLayanan = async (req, res) => {
     }
 };
 
-// ===========================
-// GET MODUL LAYANAN BY ID
-// ===========================
-// Contoh: GET /api/modul-layanan/1
-// Menampilkan 1 modul layanan DENGAN persyaratan dokumennya
 exports.getModulLayananById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -71,11 +61,6 @@ exports.getModulLayananById = async (req, res) => {
     }
 };
 
-// ===========================
-// GET ALL MODUL LAYANAN (Tanpa Relasi)
-// ===========================
-// Contoh: GET /api/modul-layanan/simple
-// Menampilkan semua modul layanan TANPA persyaratan dokumennya
 exports.getAllModulLayananSimple = async (req, res) => {
     try {
         const moduls = await ModulLayanan.findAll();

@@ -23,7 +23,8 @@ exports.authenticate = async (req, res, next) => {
             role: decoded.role,
             kabupaten_kota: decoded.kabupaten_kota,
             alamat: decoded.alamat,
-            no_hp: decoded.no_hp
+            no_hp: decoded.no_hp,
+            foto_profile: decoded.foto_profile
         };
 
         next();

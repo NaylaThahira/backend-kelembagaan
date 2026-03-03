@@ -3,7 +3,6 @@ const User = require('../models/User');
 require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
 
-// Login
 exports.login = async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -40,7 +39,8 @@ exports.login = async (req, res) => {
                 role: user.role,
                 kabupaten_kota: user.kabupaten_kota,
                 alamat: user.alamat,
-                no_hp: user.no_hp
+                no_hp: user.no_hp,
+                foto_profile: user.foto_profile
             },
             JWT_SECRET,
             { expiresIn: '24h' }
@@ -57,7 +57,8 @@ exports.login = async (req, res) => {
                     role: user.role,
                     kabupaten_kota: user.kabupaten_kota,
                     alamat: user.alamat,
-                    no_hp: user.no_hp
+                    no_hp: user.no_hp,
+                    foto_profile: user.foto_profile
                 }
             }
         });

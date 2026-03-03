@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const sequelize = require("./config/database");
 require("./models/User");
-const { Pengajuan, ModulLayanan, Dokumen, PersyaratanDokumen } = require("./models/relation");
+require('./models/relation');
 
 const app = express();
 
@@ -18,6 +18,7 @@ const uploadRoutes = require("./routes/upload");
 const modulLayananRoutes = require("./routes/modulLayanan");
 const notifikasiRoutes = require("./routes/notifikasiRoutes");
 const profileRoutes = require("./routes/profile");
+const logProsesRoutes = require('./routes/logProses');
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -26,6 +27,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/modul-layanan", modulLayananRoutes);
 app.use("/api/notifikasi", notifikasiRoutes);
 app.use("/api/profile", profileRoutes);
+app.use('/api/proses', logProsesRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");
